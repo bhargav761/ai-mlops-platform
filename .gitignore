@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables (secrets)
+.env
+
+# Logs
+*.log
+
+# ML models (large files)
+model.pkl
+
+# Terraform generated files
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+
+# IDE / Editor settings
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
