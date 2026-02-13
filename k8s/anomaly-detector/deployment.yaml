@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anomaly-detector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: anomaly-detector
+  template:
+    metadata:
+      labels:
+        app: anomaly-detector
+    spec:
+      containers:
+        - name: anomaly-detector
+          image: ai-mlops-platform-anomaly-detector
+          ports:
+            - containerPort: 8001
+          env:
+            - name: KAFKA_BROKER
+              value: kafka:9092
+            - name: ALERT_SERVICE_URL
+              value: http://alert-service:8002/alert
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: anomaly-detector
+spec:
+  selector:
+    app: anomaly-detector
+  ports:
+    - port: 8001
+      targetPort: 8001

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-ingestor
+  labels:
+    app: log-ingestor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-ingestor
+  template:
+    metadata:
+      labels:
+        app: log-ingestor
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: log-ingestor
+          image: ai-mlops-platform-log-ingestor:latest
+          imagePullPolicy: Never   # Important for local k3s
+          ports:
+            - containerPort: 8000
+
+          env:
+            - name: KAFKA_BROKER
+              value: kafka:9092
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+

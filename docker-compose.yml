@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  log-ingestor:
+    build: ./services/log-ingestor
+    ports:
+      - "8000:8000"
+    depends_on:
+      - kafka
+
+  anomaly-detector:
+    build: ./services/anomaly-detector
+    ports:
+      - "8001:8001"
+    environment:
+      KAFKA_BROKER: kafka:9092
+      ALERT_SERVICE_URL: http://alert-service:8002/alert
+    depends_on:
+      - kafka
+      - alert-service
+
+  alert-service:
+    build: ./services/alert-service
+    ports:
+      - "8002:8002"
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - log-ingestor
+      - anomaly-detector
+      - alert-service
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus

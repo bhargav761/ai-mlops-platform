@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlops-ingress
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+spec:
+  rules:
+    - host: mlops.example.com
+      http:
+        paths:
+          - path: /logs
+            pathType: Prefix
+            backend:
+              service:
+                name: log-ingestor
+                port:
+                  number: 8000
+
+          - path: /alert
+            pathType: Prefix
+            backend:
+              service:
+                name: alert-service
+                port:
+                  number: 8002

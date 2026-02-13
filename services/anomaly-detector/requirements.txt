@@ -4,3 +4,4 @@ kafka-python
 scikit-learn
 joblib
 numpy
+prometheus-client

@@ -1,0 +1,30 @@
+from fastapi import FastAPI
+from kafka import KafkaConsumer
+import json
+import joblib
+import threading
+import os
+import time
+
+# -----------------------------
+# App setup
+# -----------------------------
+app = FastAPI(title="Anomaly Detection Service")
+
+# -----------------------------
+# Kafka config
+# -----------------------------
+KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
+TOPIC = "logs"
+
+# -----------------------------
+# Load ML model (SAFE PATH)
+# -----------------------------
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "model", "model.pkl")
+
+model = joblib.load(MODEL_PATH)
+print("ML model loaded successfully")
+
+# -----------------------------
+# Kafka
