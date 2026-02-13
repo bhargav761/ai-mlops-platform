@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
 
 jobs:
   build-scan-push:
@@ -29,24 +31,32 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set Image Tag
+        id: vars
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build Docker Image
         run: |
           docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/ai-mlops-${{ matrix.service }}:${{ steps.vars.outputs.TAG }} \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/ai-mlops-${{ matrix.service }}:latest \
             ./services/${{ matrix.service }}
 
-      # 🔐 SECURITY SCAN
-      - name: Run Trivy Vulnerability Scanner
+      - name: Security Scan (Trivy)
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/ai-mlops-${{ matrix.service }}:latest
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/ai-mlops-${{ matrix.service }}:${{ steps.vars.outputs.TAG }}
           format: table
-          exit-code: '0'     # change to '1' to fail on vulnerabilities
+          exit-code: '0'
           severity: CRITICAL,HIGH
 
-      - name: Push Image to DockerHub
+      - name: Push Image
         run: |
-          docker push \
-            ${{ secrets.DOCKERHUB_USERNAME }}/ai-mlops-${{ matrix.service }}:latest
-
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ai-mlops-${{ matrix.service }}:${{ steps.vars.outputs.TAG }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ai-mlops-${{ matrix.service }}:latest
 
